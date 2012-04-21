@@ -28,37 +28,35 @@ class MouseController extends Controller
 
     constructor: ->
         @first = true
-        @haz = false
-        @value = 0.5
         @left = false
         @right = false
+        @up = false
+        @down = false
 
     on: (event) ->
         switch event.type
-            when gamejs.event.MOUSE_MOTION
-                @value = event.pos[1] / SCREEN_HEIGHT
-                @haz = true
             when gamejs.event.KEY_UP
                 switch event.key
-                    when 39 then @right = false
-                    when 37 then @left  = false
+                    when gamejs.event.K_RIGHT then @right = false
+                    when gamejs.event.K_LEFT  then @left  = false
+                    when gamejs.event.K_UP    then @up    = false
+                    when gamejs.event.K_DOWN  then @down  = false
             when gamejs.event.KEY_DOWN
                 switch event.key
-                    when 39 then @right = true
-                    when 37 then @left  = true
+                    when gamejs.event.K_RIGHT then @right = true
+                    when gamejs.event.K_LEFT  then @left  = true
+                    when gamejs.event.K_UP    then @up    = true
+                    when gamejs.event.K_DOWN  then @down  = true
 
     update: (msDuration, hero) ->
-        if @haz
-            @haz = false
-            console.log @value
-            hero.color = "rgb(128, #{255 - Math.round(@value * 255)}, 128)"
-        force = new b2Vec2(0, 340 * (@value - 0.5))
-        hero.body.ApplyForce(force, hero.body.m_position)
         if @left
             force = new b2Vec2(-100, 0)
             hero.body.ApplyForce(force, hero.body.m_position)
         if @right
             force = new b2Vec2(100, 0)
+            hero.body.ApplyForce(force, hero.body.m_position)
+        if @up
+            force = new b2Vec2(0, -100)
             hero.body.ApplyForce(force, hero.body.m_position)
 
 class Screen
@@ -179,7 +177,7 @@ main = ->
     worldAABB = new b2AABB()
     worldAABB.minVertex.Set(-1000, -1000)
     worldAABB.maxVertex.Set( 1000,  1000)
-    gravity = new b2Vec2(0, 0)
+    gravity = new b2Vec2(0, 100)
     doSleep = false
     world = new b2World(worldAABB, gravity, doSleep)
 

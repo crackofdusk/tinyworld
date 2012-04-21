@@ -3,6 +3,13 @@ mask = require 'gamejs/mask'
 
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 600
+SCREEN_HALFX  = SCREEN_WIDTH/2
+SCREEN_HALFY  = SCREEN_HEIGHT/2
+LEVEL         = 'images/test_world.png'
+LEVEL_WIDTH   = 200
+LEVEL_HEIGHT  = 200
+
+
 FPS = 30
 
 class Handler
@@ -99,7 +106,7 @@ main = ->
 
     display = gamejs.display.setMode([SCREEN_WIDTH, SCREEN_HEIGHT])
 
-    world = new World('images/test_world.png')
+    world = new World(LEVEL, [SCREEN_HALFX - LEVEL_WIDTH/2, SCREEN_HALFY])
 
     things.push world
 
@@ -110,7 +117,7 @@ main = ->
 
 
 gamejs.preload([
-    'images/test_world.png',
+    LEVEL,
 ])
 
 gamejs.ready(main)

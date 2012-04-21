@@ -5,9 +5,9 @@ A Ludum Dare 23 jam entry.
 
 # Development
 
-Install coffeescript (you need npm -- http://npmjs.org/)
+Install coffeescript (you need npm — http://npmjs.org/)
 
-    npm install -g coffeescript
+    npm install -g coffee-script
 
 Run:
 

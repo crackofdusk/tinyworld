@@ -3,7 +3,6 @@ mask = require 'gamejs/mask'
 
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 600
-SCALE_FACTOR = 40
 FPS = 30
 
 class Handler
@@ -41,19 +40,6 @@ class KeyboardController extends Controller
                     when gamejs.event.K_DOWN  then @down  = true
 
     update: (msDuration) ->
-
-class Screen
-    constructor: (@display) ->
-
-    circle: (color, x, y, radius, lineWidth) ->
-        gamejs.draw.circle(@display, @color, [@scale(x), @scale(y)], @scale(radius), lineWidth)
-
-    rect: (color, x, y, width, height, lineWidth) ->
-        rect = new gamejs.Rect(@scale(x - width / 2), @scale(y - height / 2), @scale(width), @scale(height))
-        gamejs.draw.rect(@display, color, rect, lineWidth)
-
-    scale: (number) ->
-        number * SCALE_FACTOR
 
 
 # Might be useful
@@ -112,7 +98,6 @@ main = ->
     handlers = []
 
     display = gamejs.display.setMode([SCREEN_WIDTH, SCREEN_HEIGHT])
-    screen = new Screen(display)
 
     world = new World('images/test_world.png')
 

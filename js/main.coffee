@@ -62,21 +62,21 @@ class Surface
         
 
 class Sprite extends gamejs.sprite.Sprite
-    constructor: (path, @position = [0,0]) ->
+    constructor: (path, @position) ->
         @originalImage = gamejs.image.load(path)
         @angle = 0
+        @direction = 0
         @image = @originalImage
-        @rect = new gamejs.Rect(@position)
+        @rect = new gamejs.Rect(@position, [LEVEL_WIDTH, LEVEL_HEIGHT])
 
 class World extends Sprite
     constructor: (path, position) ->
         super path, position
 
     update: (msDuration) ->
-        # FIXME: exapmle, don't hardcode this here
-        direction = 1 # positive
-        @angle += msDuration * 0.002 * direction
-        @image = gamejs.transform.rotate(@originalImage, @angle)
+        if @direction != 0
+            @angle += msDuration * 0.01 * @direction
+            @image = gamejs.transform.rotate(@originalImage, @angle)
 
 class Mask
     constructor: (surface) ->
@@ -93,6 +93,11 @@ main = ->
 
         # simulation
         controller.update(msDuration)
+        if controller.left
+            world.direction = 1
+        else if controller.right
+            world.direction = -1
+        else world.direction = 0
         for thing in things
             thing.update(msDuration)
 

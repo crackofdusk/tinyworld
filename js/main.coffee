@@ -205,7 +205,7 @@ main = ->
     things.push new Ground(world, width - 20 / SCALE_FACTOR, halfY, 40 / SCALE_FACTOR, height)
 
     controller = new MouseController
-    nhandlers.push controller
+    handlers.push controller
 
     gamejs.time.fpsCallback(gameTick, this, FPS)
 

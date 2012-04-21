@@ -1,0 +1,4 @@
+
+
+# At least during development we only want coffescript in there
+js/*.js

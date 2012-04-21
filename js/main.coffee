@@ -1,6 +1,5 @@
 gamejs = require 'gamejs'
 
-
 # Note: this is a copy of
 # https://github.com/ofmlabs/Music-Hackday-Amsterdam/blob/master/game/js/main.coffee
 #
@@ -46,18 +45,19 @@ class MouseController extends Controller
                     when gamejs.event.K_RIGHT then @right = true
                     when gamejs.event.K_LEFT  then @left  = true
                     when gamejs.event.K_UP    then @up    = true
-                    when gamejs.event.K_DOWN  then @down  = true
+                    #when gamejs.event.K_DOWN  then @down  = true
 
     update: (msDuration, hero) ->
         if @left
-            force = new b2Vec2(-100, 0)
-            hero.body.ApplyForce(force, hero.body.m_position)
+            force = new b2Vec2(-1, 0)
+            hero.body.ApplyImpulse(force, hero.body.m_position)
         if @right
-            force = new b2Vec2(100, 0)
-            hero.body.ApplyForce(force, hero.body.m_position)
+            force = new b2Vec2(1, 0)
+            hero.body.ApplyImpulse(force, hero.body.m_position)
         if @up
-            force = new b2Vec2(0, -100)
-            hero.body.ApplyForce(force, hero.body.m_position)
+            force = new b2Vec2(0, -10)
+            hero.body.ApplyImpulse(force, hero.body.m_position)
+            @up = false
 
 class Screen
     constructor: (@display) ->
@@ -109,7 +109,7 @@ class Obstacle extends Thing
         @rect = new gamejs.Rect(center[0], center[1], @width, @height)
 
         @shapedef = new b2BoxDef()
-        @shapedef.density = 1.0
+        #@shapedef.density = 1.0
         @shapedef.extents.Set(@rect.width / 2, @rect.height / 2)
         @shapedef.restitution = 0.4
 
@@ -177,7 +177,7 @@ main = ->
     worldAABB = new b2AABB()
     worldAABB.minVertex.Set(-1000, -1000)
     worldAABB.maxVertex.Set( 1000,  1000)
-    gravity = new b2Vec2(0, 100)
+    gravity = new b2Vec2(0, 50)
     doSleep = false
     world = new b2World(worldAABB, gravity, doSleep)
 

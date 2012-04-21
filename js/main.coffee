@@ -52,7 +52,7 @@ class MouseController extends Controller
             @haz = false
             console.log @value
             hero.color = "rgb(128, #{255 - Math.round(@value * 255)}, 128)"
-        force = new b2Vec2(0, 340 * (@value - 0.9))
+        force = new b2Vec2(0, 340 * (@value - 0.5))
         hero.body.ApplyForce(force, hero.body.m_position)
         if @left
             force = new b2Vec2(-100, 0)

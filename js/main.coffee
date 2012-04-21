@@ -152,6 +152,23 @@ class Ground extends Thing
         lineWidth = 0 # 0 = fill
         screen.rect(@color, @body.m_position.x, @body.m_position.y, @width, @height, lineWidth)
     
+class BaseGround extends Ground
+    constructor: (world, @x, @y, @radius) ->
+        @color = '#2a2'
+        #@rect = new gamejs.Rect(@x, @y, @width, @height)
+        @groundSd = new b2CircleDef()
+        #@groundSd.extents.Set(@rect.width / 2, @rect.height / 2)
+        @groundSd.restitution = 0.8
+        @groundSd.radius = @radius
+        @groundBd = new b2BodyDef()
+        @groundBd.AddShape(@groundSd)
+        @groundBd.position.Set(@x, @y)
+        @body = world.CreateBody(@groundBd)
+
+    draw: (screen) ->
+       lineWidth = 0 # 0 = fill
+       screen.circle(@color, @body.m_position.x, @body.m_position.y, @radius, lineWidth)
+ 
 
 main = ->
     gameTick = (msDuration) ->
@@ -196,11 +213,12 @@ main = ->
     width  = SCREEN_WIDTH / SCALE_FACTOR
     height = SCREEN_HEIGHT / SCALE_FACTOR
 
-    things.push new Ground(world, halfX, (SCREEN_HEIGHT - 20) / SCALE_FACTOR, width, 40 / SCALE_FACTOR)
-    things.push new Ground(world, halfX, 20 / SCALE_FACTOR, width, 40 / SCALE_FACTOR)
+    #down things.push new Ground(world, halfX, (SCREEN_HEIGHT - 20) / SCALE_FACTOR, width, 40 / SCALE_FACTOR)
+    #up things.push new Ground(world, halfX, 20 / SCALE_FACTOR, width, 40 / SCALE_FACTOR)
 
-    things.push new Ground(world, 20 / SCALE_FACTOR, halfY, 40 / SCALE_FACTOR, height)
-    things.push new Ground(world, width - 20 / SCALE_FACTOR, halfY, 40 / SCALE_FACTOR, height)
+    #left: things.push new Ground(world, 20 / SCALE_FACTOR, halfY, 40 / SCALE_FACTOR, height)
+    #right: things.push new Ground(world, width - 20 / SCALE_FACTOR, halfY, 40 / SCALE_FACTOR, height)
+    things.push new BaseGround(world, halfX, height+halfY*2, 16)
 
     controller = new MouseController
     handlers.push controller

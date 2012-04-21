@@ -74,6 +74,8 @@ class Sprite extends gamejs.sprite.Sprite
         @direction = 0
         @image = @originalImage
         @rect = new gamejs.Rect(@position, @dimensions)
+        @rect = new gamejs.Rect(@position) #, [1000, 1000])
+        @mask = mask.fromSurface(@image)
 
 class World extends Sprite
     constructor: (path, position) ->
@@ -87,6 +89,19 @@ class World extends Sprite
             d_angle = 180 / (@rect.height * Math.PI)
             @angle += d_angle * msDuration * @direction
             @image = gamejs.transform.rotate(@originalImage, @angle)
+            @mask = mask.fromSurface(@image)
+
+class Hero extends Sprite
+    constructor: (@position) ->
+        @image =  gamejs.image.load('images/hero_mask.png')
+        @rect = new gamejs.Rect(@position, [10, 10])
+        @mask = mask.fromSurface(@image)
+
+    update: (msDuration) ->
+        #console.log('updating')
+
+    draw: (display) ->
+        gamejs.draw.rect(display, '#22dd22',  @rect, 1)
 
             # We need to resize the containing Rect so that it contains the full
             # size rotated image. (If we keep the same dimensions the image is
@@ -121,6 +136,12 @@ main = ->
         for thing in things
             thing.update(msDuration)
 
+        #cancel the world move if there's a collision
+        if(gamejs.sprite.collideMask(world, hero))
+            console.log("collision")
+            world.direction *= -1
+            world.update(msDuration)
+
         # draw
         display.clear()
         for thing in things
@@ -135,6 +156,9 @@ main = ->
 
     things.push world
 
+    hero = new Hero([SCREEN_HALFX, SCREEN_HALFY+20])
+    things.push hero
+
     controller = new KeyboardController
     handlers.push controller
 
@@ -143,6 +167,7 @@ main = ->
 
 gamejs.preload([
     LEVEL,
+    'images/hero_mask.png'
 ])
 
 gamejs.ready(main)

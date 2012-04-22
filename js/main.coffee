@@ -6,6 +6,7 @@ SCREEN_HEIGHT = 600
 SCREEN_HALFX  = SCREEN_WIDTH/2
 SCREEN_HALFY  = SCREEN_HEIGHT/2
 LEVEL         = 'images/test_world.png'
+HERO          = 'images/hero_mask.png'
 LEVEL_WIDTH   = 2000
 LEVEL_HEIGHT  = 2000
 
@@ -70,8 +71,6 @@ class Sprite extends gamejs.sprite.Sprite
         else
             @dimensions = dimensions
 
-        @angle = 0
-        @direction = 0
         @image = @originalImage
         @rect = new gamejs.Rect(@position, @dimensions)
         @mask = mask.fromSurface(@image)
@@ -79,6 +78,8 @@ class Sprite extends gamejs.sprite.Sprite
 class World extends Sprite
     constructor: (path, position) ->
         super path, position
+        @angle = 0
+        @direction = 0
         @dummySurface = new gamejs.Surface(@dimensions)
 
     update: (msDuration) ->
@@ -100,16 +101,15 @@ class World extends Sprite
             @rect.center = center
 
 class Hero extends Sprite
-    constructor: (@position) ->
-        @image =  gamejs.image.load('images/hero_mask.png')
-        @rect = new gamejs.Rect(@position, [10, 10])
-        @mask = mask.fromSurface(@image)
+    constructor: (path, position) ->
+        super path, position
+        @step = 5
+        @direction = 0
 
     update: (msDuration) ->
-        #console.log('updating')
-
-    draw: (display) ->
-        gamejs.draw.rect(display, '#22dd22',  @rect, 1)
+        if @direction != 0
+            @rect.left +=  @direction * @step
+            # TODO: also update vertical position
 
 class Mask
     constructor: (surface) ->
@@ -118,29 +118,29 @@ class Mask
 
 
 main = ->
-    gameTick = (msDuration) ->
+    handleInput = (msDuration) ->
         # input
         gamejs.event.get().forEach (event) ->
             for h in handlers
                 h.on(event)
 
-        # simulation
+    simulate = (msDuration) ->
         controller.update(msDuration)
         if controller.left
-            world.direction = 1
+            hero.direction = -1
         else if controller.right
-            world.direction = -1
-        else world.direction = 0
+            hero.direction = 1
+        else hero.direction = 0
+
         for thing in things
             thing.update(msDuration)
 
-        #cancel the world move if there's a collision
         if(gamejs.sprite.collideMask(world, hero))
             console.log("collision")
-            world.direction *= -1
-            world.update(msDuration)
+            hero.direction *= -1
+            hero.update(msDuration)
 
-        # draw
+    render = (msDuration) ->
         display.clear()
         for thing in things
             thing.draw(display)
@@ -154,18 +154,21 @@ main = ->
 
     things.push world
 
-    hero = new Hero([SCREEN_HALFX, SCREEN_HALFY+20])
+    hero = new Hero(HERO, [SCREEN_HALFX, SCREEN_HALFY - 130])
     things.push hero
 
     controller = new KeyboardController
     handlers.push controller
 
-    gamejs.time.fpsCallback(gameTick, this, FPS)
+    callbacks = [handleInput, simulate, render]
+
+    for callback in callbacks
+        gamejs.time.fpsCallback(callback, this, FPS)
 
 
 gamejs.preload([
     LEVEL,
-    'images/hero_mask.png'
+    HERO,
 ])
 
 gamejs.ready(main)

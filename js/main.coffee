@@ -74,7 +74,6 @@ class Sprite extends gamejs.sprite.Sprite
         @direction = 0
         @image = @originalImage
         @rect = new gamejs.Rect(@position, @dimensions)
-        @rect = new gamejs.Rect(@position) #, [1000, 1000])
         @mask = mask.fromSurface(@image)
 
 class World extends Sprite
@@ -91,6 +90,15 @@ class World extends Sprite
             @image = gamejs.transform.rotate(@originalImage, @angle)
             @mask = mask.fromSurface(@image)
 
+            # We need to resize the containing Rect so that it contains the full
+            # size rotated image. (If we keep the same dimensions the image is
+            # scaled). We do this by rotating a surface with the dimensions of
+            # the image and using its new size
+            center = @rect.center
+            dimensions = gamejs.transform.rotate(@dummySurface, @angle).getSize()
+            [@rect.width, @rect.height] = dimensions
+            @rect.center = center
+
 class Hero extends Sprite
     constructor: (@position) ->
         @image =  gamejs.image.load('images/hero_mask.png')
@@ -102,16 +110,6 @@ class Hero extends Sprite
 
     draw: (display) ->
         gamejs.draw.rect(display, '#22dd22',  @rect, 1)
-
-            # We need to resize the containing Rect so that it contains the full
-            # size rotated image. (If we keep the same dimensions the image is
-            # scaled). We do this by rotating a surface with the dimensions of
-            # the image and using its new size
-            center = @rect.center
-            dimensions = gamejs.transform.rotate(@dummySurface, @angle).getSize()
-            [@rect.width, @rect.height] = dimensions
-            @rect.center = center
-
 
 class Mask
     constructor: (surface) ->

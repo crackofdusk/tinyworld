@@ -1,13 +1,13 @@
 gamejs = require 'gamejs'
 mask = require 'gamejs/mask'
 
-SCREEN_WIDTH = 1000
+SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 SCREEN_HALFX  = SCREEN_WIDTH/2
 SCREEN_HALFY  = SCREEN_HEIGHT/2
 LEVEL         = 'images/test_world.png'
-LEVEL_WIDTH   = 200
-LEVEL_HEIGHT  = 200
+LEVEL_WIDTH   = 2000
+LEVEL_HEIGHT  = 2000
 
 
 FPS = 30
@@ -62,21 +62,41 @@ class Surface
         
 
 class Sprite extends gamejs.sprite.Sprite
-    constructor: (path, @position) ->
+    constructor: (path, @position, dimensions) ->
         @originalImage = gamejs.image.load(path)
+
+        if (typeof dimensions) == 'undefined'
+            @dimensions = @originalImage.getSize()
+        else
+            @dimensions = dimensions
+
         @angle = 0
         @direction = 0
         @image = @originalImage
-        @rect = new gamejs.Rect(@position, [LEVEL_WIDTH, LEVEL_HEIGHT])
+        @rect = new gamejs.Rect(@position, @dimensions)
 
 class World extends Sprite
     constructor: (path, position) ->
         super path, position
+        @dummySurface = new gamejs.Surface(@dimensions)
 
     update: (msDuration) ->
         if @direction != 0
-            @angle += msDuration * 0.01 * @direction
+            # The length of an arc is L = d_angle * radius * pi / 180°
+            # We want L = 1
+            d_angle = 180 / (@rect.height * Math.PI)
+            @angle += d_angle * msDuration * @direction
             @image = gamejs.transform.rotate(@originalImage, @angle)
+
+            # We need to resize the containing Rect so that it contains the full
+            # size rotated image. (If we keep the same dimensions the image is
+            # scaled). We do this by rotating a surface with the dimensions of
+            # the image and using its new size
+            center = @rect.center
+            dimensions = gamejs.transform.rotate(@dummySurface, @angle).getSize()
+            [@rect.width, @rect.height] = dimensions
+            @rect.center = center
+
 
 class Mask
     constructor: (surface) ->

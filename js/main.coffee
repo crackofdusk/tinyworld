@@ -1,5 +1,6 @@
 gamejs = require 'gamejs'
 mask = require 'gamejs/mask'
+$v = require 'gamejs/utils/vectors'
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -101,15 +102,25 @@ class World extends Sprite
             @rect.center = center
 
 class Hero extends Sprite
-    constructor: (path, position) ->
+    constructor: (path, position, @worldcenter) ->
         super path, position
-        @step = 5
+        @step = 1
         @direction = 0
+        @angle = 0
 
     update: (msDuration) ->
         if @direction != 0
-            @rect.left +=  @direction * @step
-            # TODO: also update vertical position
+            radius = $v.distance(@worldcenter, @rect.center)
+            d_angle = 180 / (radius * Math.PI)
+            @angle += d_angle * @step * @direction
+
+
+            v = [@worldcenter[0] - @rect.center[0], - (@worldcenter[1] - @rect.center[1])]
+            rv = $v.rotate(v, @angle)
+
+            @rect.center = $v.add(@worldcenter, rv)
+
+
 
 class Mask
     constructor: (surface) ->
@@ -154,7 +165,7 @@ main = ->
 
     things.push world
 
-    hero = new Hero(HERO, [SCREEN_HALFX, SCREEN_HALFY - 130])
+    hero = new Hero(HERO, [SCREEN_HALFX, SCREEN_HALFY - 130], world.rect.center)
     things.push hero
 
     controller = new KeyboardController

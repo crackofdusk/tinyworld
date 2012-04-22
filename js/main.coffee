@@ -115,7 +115,7 @@ class Hero extends Sprite
             @angle += d_angle * @step * @direction
 
 
-            v = [@worldcenter[0] - @rect.center[0], - (@worldcenter[1] - @rect.center[1])]
+            v = $v.multiply($v.subtract(@worldcenter, @rect.center), [-1,1])
             rv = $v.rotate(v, @angle)
 
             @rect.center = $v.add(@worldcenter, rv)

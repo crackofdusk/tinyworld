@@ -7,7 +7,7 @@ SCREEN_HEIGHT = 600
 SCREEN_HALFX  = SCREEN_WIDTH/2
 SCREEN_HALFY  = SCREEN_HEIGHT/2
 LEVEL         = 'images/test_world.png'
-HERO          = 'images/hero_mask.png'
+HERO          = 'images/hero.png'
 LEVEL_WIDTH   = 2000
 LEVEL_HEIGHT  = 2000
 
@@ -119,6 +119,8 @@ class Hero extends Sprite
             rv = $v.rotate(v, @angle)
 
             @rect.center = $v.add(@worldcenter, rv)
+            @image = gamejs.transform.rotate(@originalImage, @angle * 20)
+
 
 
 
@@ -165,7 +167,7 @@ main = ->
 
     things.push world
 
-    hero = new Hero(HERO, [SCREEN_HALFX, SCREEN_HALFY - 130], world.rect.center)
+    hero = new Hero(HERO, [SCREEN_HALFX - 100, SCREEN_HALFY - 150], world.rect.center)
     things.push hero
 
     controller = new KeyboardController

@@ -1,6 +1,8 @@
 gamejs = require 'gamejs'
 mask = require 'gamejs/mask'
+$t = require 'gamejs/transform'
 $v = require 'gamejs/utils/vectors'
+
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -10,7 +12,6 @@ LEVEL         = 'images/test_world.png'
 HERO          = 'images/hero.png'
 LEVEL_WIDTH   = 2000
 LEVEL_HEIGHT  = 2000
-
 
 FPS = 30
 
@@ -51,18 +52,6 @@ class KeyboardController extends Controller
     update: (msDuration) ->
 
 
-# Might be useful
-class Surface
-    constructor: (@display, path, @position = [0,0]) ->
-        @surface = gamejs.image.load(path)
-
-    update: (position) ->
-        @position = position
-
-    draw: ->
-        @display.blit(@surface, @position)
-        
-
 class Sprite extends gamejs.sprite.Sprite
     constructor: (path, @position, dimensions) ->
         @originalImage = gamejs.image.load(path)
@@ -76,82 +65,131 @@ class Sprite extends gamejs.sprite.Sprite
         @rect = new gamejs.Rect(@position, @dimensions)
         @mask = mask.fromSurface(@image)
 
+        @dummySurface = new gamejs.Surface(@dimensions)
+
+    rotateBy: (degrees) ->
+        @angle += degrees
+        @image = gamejs.transform.rotate(@originalImage, @angle)
+
+        @mask = mask.fromSurface(@image)
+
+        # Resize the containing Rect so that it contains the full
+        # size rotated image. (If we keep the same dimensions the image is
+        # scaled). We do this by rotating a surface with the dimensions of
+        # the image and using its new size
+        center = @rect.center
+        dimensions = $t.rotate(@dummySurface, @angle).getSize()
+        [@rect.width, @rect.height] = dimensions
+        @rect.center = center
+
+
 class World extends Sprite
     constructor: (path, position) ->
         super path, position
         @angle = 0
         @direction = 0
-        @dummySurface = new gamejs.Surface(@dimensions)
 
     update: (msDuration) ->
         if @direction != 0
             # The length of an arc is L = d_angle * radius * pi / 180°
             # We want L = 1
-            d_angle = 180 / (@rect.height * Math.PI)
-            @angle += d_angle * msDuration * @direction
-            @image = gamejs.transform.rotate(@originalImage, @angle)
-            @mask = mask.fromSurface(@image)
+            d_angle = 180 / (@rect.height * Math.PI) * msDuration * @direction[0]
+            @rotateBy(d_angle)
 
-            # We need to resize the containing Rect so that it contains the full
-            # size rotated image. (If we keep the same dimensions the image is
-            # scaled). We do this by rotating a surface with the dimensions of
-            # the image and using its new size
-            center = @rect.center
-            dimensions = gamejs.transform.rotate(@dummySurface, @angle).getSize()
-            [@rect.width, @rect.height] = dimensions
-            @rect.center = center
 
 class Hero extends Sprite
     constructor: (path, position, @worldcenter) ->
         super path, position
-        @step = 1
-        @direction = 0
+        @step = 10
+        @direction = [0,0]
         @angle = 0
 
     update: (msDuration) ->
-        if @direction != 0
-            radius = $v.distance(@worldcenter, @rect.center)
-            d_angle = 180 / (radius * Math.PI)
-            @angle += d_angle * @step * @direction
+        #
 
+    moveBy: (vector) ->
+        u = $v.unit(vector)
+        # change the coordinate system origin from the hero to the screen origin
+        direction = $v.rotate(vector, u[0]  * gamejs.utils.math.radians(@angle))
 
-            v = $v.multiply($v.subtract(@worldcenter, @rect.center), [-1,1])
-            rv = $v.rotate(v, @angle)
+        u = $v.unit(direction)
 
-            @rect.center = $v.add(@worldcenter, rv)
-            @image = gamejs.transform.rotate(@originalImage, @angle * 20)
+        unless (u[0] == 0 && u[1] == 0)
+                @rect.center = $v.add(@rect.center, direction)
 
+                # TODO: deal with image flipping (for left/right movement)
+            
+                # rotate the sprite if it's not moving in the same direction as before
+                d_angle = gamejs.utils.math.degrees($v.angle(@direction, direction)) % 360
 
+                if d_angle % 180 != 0
+                    console.log d_angle
+                    # FIXME: find a way to avoid rotating this often
+                    #@rotateBy(u[0] * d_angle)
 
-
-class Mask
-    constructor: (surface) ->
-        s = surface.surface
-        @mask = mask.fromSurface(s)
+                @direction = direction
 
 
 main = ->
     handleInput = (msDuration) ->
-        # input
         gamejs.event.get().forEach (event) ->
             for h in handlers
                 h.on(event)
 
     simulate = (msDuration) ->
+
+        direction = [0,0]
+
         controller.update(msDuration)
         if controller.left
-            hero.direction = -1
+            direction = [-1, 0]
         else if controller.right
-            hero.direction = 1
-        else hero.direction = 0
+            direction = [1, 0]
+        else direction = [0, 0]
+
+        direction = $v.multiply(direction, hero.step)
 
         for thing in things
             thing.update(msDuration)
 
+        hero.moveBy(direction)
+
+        # Don't move the hero up or down by more than this if trying to adjust
+        # vertical position
+        d_y_treshold = 2
+
+        # We hit something, captain. Better check it out!
         if(gamejs.sprite.collideMask(world, hero))
-            console.log("collision")
-            hero.direction *= -1
-            hero.update(msDuration)
+
+            # First revert to the position before the collision
+            hero.moveBy($v.multiply(direction, -1))
+
+            # The collision could be due to the hero going up on an incline. Try
+            # moving the hero up a bit. If it's not enough we have an
+            # unsurmountable obstacle
+            
+            d_y = 0
+            while d_y <= d_y_treshold
+                v = direction
+                v[1] -= d_y * hero.step
+                hero.moveBy(v) # up
+                d_y++
+
+                if(gamejs.sprite.collideMask(world, hero))
+                    hero.moveBy($v.multiply(v, -1))
+
+        # Adapt hero vertical position if he's going down on an incline
+        collision = false
+        d_y = 0
+        until collision || d_y > d_y_treshold
+            v = [0, d_y * hero.step]
+            hero.moveBy(v) # down
+            d_y++
+
+            if(gamejs.sprite.collideMask(world, hero))
+                collision = true
+                hero.moveBy($v.multiply(v, -1))
+
 
     render = (msDuration) ->
         display.clear()
@@ -167,7 +205,7 @@ main = ->
 
     things.push world
 
-    hero = new Hero(HERO, [SCREEN_HALFX - 100, SCREEN_HALFY - 150], world.rect.center)
+    hero = new Hero(HERO, [SCREEN_HALFX - 100, SCREEN_HALFY - 130], world.rect.center)
     things.push hero
 
     controller = new KeyboardController

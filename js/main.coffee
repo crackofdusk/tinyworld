@@ -105,7 +105,7 @@ class Hero extends Sprite
         @angle = 0
 
     update: (msDuration) ->
-        #
+        #Nothing for now, use moveBy
 
     moveBy: (vector) ->
         u = $v.unit(vector)
@@ -122,10 +122,12 @@ class Hero extends Sprite
                 # rotate the sprite if it's not moving in the same direction as before
                 d_angle = gamejs.utils.math.degrees($v.angle(@direction, direction)) % 360
 
+                ###
                 if d_angle % 180 != 0
                     console.log d_angle
                     # FIXME: find a way to avoid rotating this often
                     #@rotateBy(u[0] * d_angle)
+                ###
 
                 @direction = direction
 
@@ -135,6 +137,33 @@ main = ->
         gamejs.event.get().forEach (event) ->
             for h in handlers
                 h.on(event)
+
+    manageViewport = ->
+        threshold = 20
+        toTheLeft = false
+        horizontalDirection = 0
+        needChange = false
+
+        if SCREEN_WIDTH - hero.rect.right < threshold
+            needChange = true
+        else if hero.rect.left < threshold
+            needChange = true
+            toTheLeft = true
+
+        if needChange
+            radius = LEVEL_WIDTH/2
+            angle = 2 * Math.asin(SCREEN_HALFX/radius)
+            angle *= -1 unless toTheLeft
+            world.rotateBy(angle)
+
+            # TODO: compute actual position and orientation
+            if toTheLeft
+                hero.rect.right = SCREEN_WIDTH - threshold - 10
+            else
+                hero.rect.left = threshold + 10
+
+            hero.rotateBy(angle)
+
 
     simulate = (msDuration) ->
 
@@ -190,6 +219,8 @@ main = ->
                 collision = true
                 hero.moveBy($v.multiply(v, -1))
 
+        # Now that everything is set make the hero is still visible
+        manageViewport()
 
     render = (msDuration) ->
         display.clear()

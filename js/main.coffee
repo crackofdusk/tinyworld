@@ -139,31 +139,12 @@ main = ->
                 h.on(event)
 
     manageViewport = ->
-        threshold = 20
-        toTheLeft = false
-        horizontalDirection = 0
-        needChange = false
-
-        if SCREEN_WIDTH - hero.rect.right < threshold
-            needChange = true
-        else if hero.rect.left < threshold
-            needChange = true
-            toTheLeft = true
-
-        if needChange
-            radius = LEVEL_WIDTH/2
-            angle = 2 * Math.asin(SCREEN_HALFX/radius)
-            angle *= -1 unless toTheLeft
-            world.rotateBy(angle)
-
-            # TODO: compute actual position and orientation
-            if toTheLeft
-                hero.rect.right = SCREEN_WIDTH - threshold - 10
-            else
-                hero.rect.left = threshold + 10
-
-            hero.rotateBy(angle)
-
+        [w, h] = [hero.rect.width, hero.rect.height]
+        viewport = new gamejs.Rect([w, h], [SCREEN_WIDTH - 2*w, SCREEN_HEIGHT - 2*h])
+        unless viewport.collideRect(hero.rect)
+            direction = $v.subtract([SCREEN_HALFX, SCREEN_HALFY], hero.rect.center)
+            for thing in things
+                thing.rect.moveIp(direction)
 
     simulate = (msDuration) ->
 

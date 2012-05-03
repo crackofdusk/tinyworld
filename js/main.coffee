@@ -9,11 +9,28 @@ SCREEN_HEIGHT = 600
 SCREEN_HALFX  = SCREEN_WIDTH/2
 SCREEN_HALFY  = SCREEN_HEIGHT/2
 LEVEL         = 'images/test_world.png'
-HERO          = 'images/hero.png'
+HERO          = 'images/ball.png'
 LEVEL_WIDTH   = 2000
 LEVEL_HEIGHT  = 2000
 
 FPS = 30
+ 
+# The reference is at [x0, y0]
+asReferenceCoords = ([x, y], [x0, y0]) ->
+    [x - x0, -y + y0]
+
+# The reference is at [x0, y0]
+asScreenCoords = ([x, y], [x0, y0]) ->
+    [x + x0, -y + y0]
+
+asPolarCoords = (coords) ->
+    r = $v.len(coords)
+    theta = $v.angle([1, 0], coords) % (2 * Math.PI) + 2 * Math.PI
+
+    [r, theta]
+ 
+asCartesianCoords = ([r, theta]) ->
+    [r * Math.cos(theta), r * Math.sin(theta)]
 
 class Handler
     on: (event) ->
@@ -104,32 +121,35 @@ class Hero extends Sprite
         @direction = [0,0]
         @angle = 0
 
+    polarPosition: ->
+        asPolarCoords(asReferenceCoords(@rect.center, @worldcenter))
+
+    updatePolarPosition: (coords) ->
+        @rect.center = asScreenCoords(asCartesianCoords(coords), @worldcenter)
+
     update: (msDuration) ->
         #Nothing for now, use moveBy
 
     moveBy: (vector) ->
-        u = $v.unit(vector)
-        # change the coordinate system origin from the hero to the screen origin
-        direction = $v.rotate(vector, u[0]  * gamejs.utils.math.radians(@angle))
+        unless vector[0] == 0 && vector[1] == 0
+            u = $v.unit(vector)
+            angle = - @polarPosition()[1] + 0.5 * Math.PI
+            direction = $v.rotate(vector, angle)
+            console.log angle
 
-        u = $v.unit(direction)
 
-        unless (u[0] == 0 && u[1] == 0)
-                @rect.center = $v.add(@rect.center, direction)
+            @rect.center = $v.add(@rect.center, direction)
 
-                # TODO: deal with image flipping (for left/right movement)
-            
-                # rotate the sprite if it's not moving in the same direction as before
-                d_angle = gamejs.utils.math.degrees($v.angle(@direction, direction)) % 360
+            # TODO: deal with image flipping (for left/right movement)
 
-                ###
-                if d_angle % 180 != 0
-                    console.log d_angle
-                    # FIXME: find a way to avoid rotating this often
-                    #@rotateBy(u[0] * d_angle)
-                ###
+            # rotate the sprite if it's not moving in the same direction as before
+            d_angle = gamejs.utils.math.degrees($v.angle(@direction, direction)) % 360
 
-                @direction = direction
+            if d_angle % 180 != 0
+                # FIXME: find a way to avoid rotating this often
+                @rotateBy(u[0] * d_angle)
+
+            @direction = direction
 
 
 main = ->
@@ -145,6 +165,8 @@ main = ->
             direction = $v.subtract([SCREEN_HALFX, SCREEN_HALFY], hero.rect.center)
             for thing in things
                 thing.rect.moveIp(direction)
+
+            hero.worldcenter = world.rect.center
 
     simulate = (msDuration) ->
 
@@ -192,13 +214,15 @@ main = ->
         collision = false
         d_y = 0
         until collision || d_y > d_y_treshold
-            v = [0, d_y * hero.step]
-            hero.moveBy(v) # down
+            oldPos = hero.polarPosition()
+            [r, theta] = oldPos
+            r2 = r - d_y * hero.step
+            hero.updatePolarPosition([r2, theta])
             d_y++
 
             if(gamejs.sprite.collideMask(world, hero))
                 collision = true
-                hero.moveBy($v.multiply(v, -1))
+                hero.updatePolarPosition(oldPos)
 
         # Now that everything is set make the hero is still visible
         manageViewport()
@@ -217,7 +241,8 @@ main = ->
 
     things.push world
 
-    hero = new Hero(HERO, [SCREEN_HALFX - 100, SCREEN_HALFY - 130], world.rect.center)
+    hero = new Hero(HERO, [SCREEN_HALFX - 40, SCREEN_HALFY - 80], world.rect.center)
+
     things.push hero
 
     controller = new KeyboardController

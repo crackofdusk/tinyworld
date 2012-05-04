@@ -117,7 +117,8 @@ class World extends Sprite
 class Hero extends Sprite
     constructor: (path, position, @worldcenter) ->
         super path, position
-        @step = 10
+        @step = 8
+        @vstep = 1
         @direction = [0,0]
         @angle = 0
 
@@ -203,7 +204,7 @@ main = ->
             d_y = 0
             while d_y <= d_y_treshold
                 v = direction
-                v[1] -= d_y * hero.step
+                v[1] -= d_y * hero.vstep
                 hero.moveBy(v) # up
                 d_y++
 
@@ -216,7 +217,7 @@ main = ->
         until collision || d_y > d_y_treshold
             oldPos = hero.polarPosition()
             [r, theta] = oldPos
-            r2 = r - d_y * hero.step
+            r2 = r - d_y * hero.vstep
             hero.updatePolarPosition([r2, theta])
             d_y++
 

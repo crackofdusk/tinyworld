@@ -103,15 +103,6 @@ class Sprite extends gamejs.sprite.Sprite
 class World extends Sprite
     constructor: (path, position) ->
         super path, position
-        @angle = 0
-        @direction = 0
-
-    update: (msDuration) ->
-        if @direction != 0
-            # The length of an arc is L = d_angle * radius * pi / 180°
-            # We want L = 1
-            d_angle = 180 / (@rect.height * Math.PI) * msDuration * @direction[0]
-            @rotateBy(d_angle)
 
 
 class Hero extends Sprite
@@ -136,8 +127,6 @@ class Hero extends Sprite
             u = $v.unit(vector)
             angle = - @polarPosition()[1] + 0.5 * Math.PI
             direction = $v.rotate(vector, angle)
-            console.log angle
-
 
             @rect.center = $v.add(@rect.center, direction)
 
